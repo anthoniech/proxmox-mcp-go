@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proxmox MCP Server</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .container { text-align: center; max-width: 480px; padding: 2rem; }
+    h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.5rem; }
+    p { color: #94a3b8; margin-bottom: 1.5rem; }
+    .endpoints { text-align: left; background: #1e293b; border-radius: 8px; padding: 1.25rem; font-family: "SF Mono", "Fira Code", monospace; font-size: 0.875rem; line-height: 2; }
+    .method { color: #22d3ee; }
+    a { color: #818cf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Proxmox MCP Server</h1>
+    <p>Model Context Protocol server for Proxmox VE</p>
+    <div class="endpoints">
+      <span class="method">GET</span> <a href="/api/v1/">/api/v1/</a><br>
+      <span class="method">GET</span> <a href="/api/v1/health">/api/v1/health</a>
+    </div>
+  </div>
+</body>
+</html>

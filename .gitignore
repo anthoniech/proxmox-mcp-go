@@ -1,0 +1,6 @@
+tmp/
+data/
+.air.conf
+.vscode/settings.json
+.github/instructions
+.DS_Store

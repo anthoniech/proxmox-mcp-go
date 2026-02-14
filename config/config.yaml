@@ -1,0 +1,7 @@
+bind_port: 3002
+verbose: true
+pve_url: "https://127.0.0.1:8006"
+pve_token: "your-pve-token-here"
+pve_token_id: "root@pam!mcp"
+mcp_api_key: "your-secret-key-here"
+# mcp_stdio: false

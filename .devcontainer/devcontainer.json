@@ -1,0 +1,57 @@
+{
+  "name": "proxmox-mcp-go",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "mounts": [
+    "source=${env:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly"
+  ],
+  "remoteEnv": {},
+  "postCreateCommand": "git config --global --add safe.directory /workspace || true && mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "tamasfe.even-better-toml",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "stylelint.vscode-stylelint",
+        "dsznajder.es7-react-js-snippets"
+      ],
+      "settings": {
+        "go.useGoProxyToCheckForToolUpdates": false,
+        "go.useLanguageServer": true,
+        "go.gopath": "/home/vscode/go",
+        "go.goroot": "/usr/local/go",
+        "go.toolsGopath": "/home/vscode/go/bin",
+        "go.formatTool": "goimports",
+        "go.lintOnSave": "package",
+        "go.lintTool": "golangci-lint",
+        "editor.formatOnSave": true,
+        "[javascript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "vscode.json-language-features"
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          }
+        }
+      }
+    }
+  },
+  "forwardPorts": [
+    3000,
+    3001,
+    8081
+  ],
+  "remoteUser": "vscode"
+}
