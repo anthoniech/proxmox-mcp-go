@@ -68,6 +68,40 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 	)
 
 	s.AddTool(
+		mcp.NewTool("get_guest_config",
+			mcp.WithDescription("Get the configuration of a VM or container (disk layout, NIC config, boot order, etc.)"),
+			mcp.WithString("node",
+				mcp.Description("Node name"),
+				mcp.Required(),
+			),
+			mcp.WithString("vmid",
+				mcp.Description("VM/container ID"),
+				mcp.Required(),
+			),
+			mcp.WithString("type",
+				mcp.Description("Guest type: qemu or lxc (default: qemu)"),
+			),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			node, err := req.RequireString("node")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err := req.RequireString("vmid")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType := req.GetString("type", "qemu")
+
+			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/%s/%s/config", node, guestType, vmid))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			return mcp.NewToolResultText(result), nil
+		},
+	)
+
+	s.AddTool(
 		mcp.NewTool("start_guest",
 			mcp.WithDescription("Start a VM or container"),
 			mcp.WithString("node",

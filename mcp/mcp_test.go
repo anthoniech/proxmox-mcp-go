@@ -23,10 +23,10 @@ const (
 // expectedTools lists every tool name that must be registered.
 var expectedTools = []string{
 	// cluster
-	"get_cluster_status", "list_nodes", "get_node_status",
+	"get_version", "get_cluster_status", "list_nodes", "get_node_status",
 	// guest
 	"list_vms", "list_containers", "list_cluster_resources",
-	"start_guest", "stop_guest", "get_next_id",
+	"get_guest_config", "start_guest", "stop_guest", "get_next_id",
 	// create
 	"create_vm", "create_container", "clone_guest",
 	"delete_guest", "convert_to_template",

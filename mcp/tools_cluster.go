@@ -13,6 +13,19 @@ import (
 
 func RegisterClusterTools(s *server.MCPServer, c *ProxmoxClient) {
 	s.AddTool(
+		mcp.NewTool("get_version",
+			mcp.WithDescription("Get the Proxmox VE API version information"),
+		),
+		func(ctx context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			result, err := c.Get(ctx, "/version")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			return mcp.NewToolResultText(result), nil
+		},
+	)
+
+	s.AddTool(
 		mcp.NewTool("get_cluster_status",
 			mcp.WithDescription("Get Proxmox cluster status including nodes and quorum info"),
 		),

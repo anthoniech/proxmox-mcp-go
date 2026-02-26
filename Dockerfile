@@ -32,7 +32,7 @@ COPY --from=builder /build/config/config.yaml /app/
 
 COPY --from=security_provider /etc/passwd /etc/passwd
 COPY --from=security_provider /data /app/data
-COPY --from=security_provider /logs /app/logs
+COPY --chown=nonroot:nonroot --from=security_provider /logs /app/logs
 USER nonroot
 
 WORKDIR /app
