@@ -19,7 +19,12 @@ var Cfg = Configuration{
 type LogSettings struct {
 	LogFile string `yaml:"log_file"`
 	Verbose bool   `yaml:"verbose"`
-	LogType string `yaml:"log_type"`
+
+	AuditEnabled    bool   `yaml:"audit_log_enabled"`
+	AuditFilePath   string `yaml:"audit_log_file"`
+	AuditMaxSizeMB  int    `yaml:"audit_log_max_size_mb"`
+	AuditMaxAgeDays int    `yaml:"audit_log_max_age_days"`
+	AuditMaxBackups int    `yaml:"audit_log_max_backups"`
 }
 
 type Configuration struct {
@@ -48,20 +53,6 @@ func ResolveConfigPath(configFilename, workDir string) string {
 		configFile = filepath.Join(workDir, configFile)
 	}
 	return configFile
-}
-
-func GetLogSettings(configPath string) LogSettings {
-	l := LogSettings{}
-	yamlFile, err := os.ReadFile(configPath)
-	if err != nil {
-		log.Errorf("Couldn't read config file %s: %s", configPath, err)
-		return l
-	}
-	err = yaml.Unmarshal(yamlFile, &l)
-	if err != nil {
-		log.Errorf("Couldn't get logging settings from the configuration: %s", err)
-	}
-	return l
 }
 
 func Parse(configPath string) error {

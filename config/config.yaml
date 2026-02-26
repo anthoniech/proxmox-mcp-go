@@ -5,3 +5,10 @@ pve_token: "your-pve-token-here"
 pve_token_id: "root@pam!mcp"
 mcp_api_key: "your-secret-key-here"
 # mcp_stdio: false
+
+# Audit logging for Proxmox API calls
+audit_log_enabled: true
+audit_log_file: "logs/audit.log"
+audit_log_max_size_mb: 100
+audit_log_max_age_days: 30
+audit_log_max_backups: 5

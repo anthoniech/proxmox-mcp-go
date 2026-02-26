@@ -4,37 +4,22 @@
 package app
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/anthoniech/proxmox-mcp-go/config"
-	"github.com/mattn/go-colorable"
 	log "github.com/sirupsen/logrus"
 
-	"go.elastic.co/ecslogrus"
+	"github.com/anthoniech/proxmox-mcp-go/config"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-type ecsFormatter struct {
-	ecslogrus.Formatter
-}
-
-func (f *ecsFormatter) Format(entry *log.Entry) ([]byte, error) {
-	entry.Data["service.name"] = os.Getenv("APP_NAME")
-	entry.Data["service.environment"] = os.Getenv("ENVIRONMENT")
-
-	return f.Formatter.Format(entry)
-}
+// AuditLogger is a dedicated logger for Proxmox API call audit entries.
+var AuditLogger *log.Logger
 
 func configureLogger(args options) {
-	configPath := config.ResolveConfigPath(appCtx.configFilename, appCtx.workDir)
-	ls := config.GetLogSettings(configPath)
-
-	if ls.LogType == "ecs" {
-		log.SetFormatter(&ecsFormatter{ecslogrus.Formatter{}})
-	} else {
-		log.SetFormatter(&log.TextFormatter{ForceColors: true})
-		log.SetOutput(colorable.NewColorableStdout())
-	}
+	ls := config.Cfg.LogSettings
 
 	if args.verbose {
 		ls.Verbose = true
@@ -51,19 +36,63 @@ func configureLogger(args options) {
 		return
 	}
 
-	if ls.LogFile == "syslog" {
-		// TODO: syslog configuration pending
-		return
-	}
-
-	logFilePath := filepath.Join(appCtx.workDir, ls.LogFile)
-	if filepath.IsAbs(ls.LogFile) {
-		logFilePath = ls.LogFile
-	}
+	logFilePath := resolveFilePath(ls.LogFile)
 
 	file, err := os.OpenFile(logFilePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		log.Fatalf("cannot create a log file: %s", err)
 	}
-	log.SetOutput(file)
+	log.SetOutput(io.MultiWriter(os.Stdout, file))
+}
+
+func resolveFilePath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(appCtx.workDir, path)
+}
+
+func configureAuditLogger() {
+	ls := config.Cfg.LogSettings
+	if !ls.AuditEnabled {
+		return
+	}
+
+	filePath := resolveFilePath(ls.AuditFilePath)
+	if filePath == "" {
+		filePath = resolveFilePath("logs/audit.log")
+	}
+
+	if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
+		log.Errorf("cannot create audit log directory: %s", err)
+		return
+	}
+
+	maxSize := ls.AuditMaxSizeMB
+	if maxSize <= 0 {
+		maxSize = 100
+	}
+	maxAge := ls.AuditMaxAgeDays
+	if maxAge <= 0 {
+		maxAge = 30
+	}
+	maxBackups := ls.AuditMaxBackups
+	if maxBackups <= 0 {
+		maxBackups = 5
+	}
+
+	rotator := &lumberjack.Logger{
+		Filename:   filePath,
+		MaxSize:    maxSize,
+		MaxAge:     maxAge,
+		MaxBackups: maxBackups,
+		Compress:   true,
+	}
+
+	AuditLogger = log.New()
+	AuditLogger.SetFormatter(&log.JSONFormatter{})
+	AuditLogger.SetOutput(io.MultiWriter(os.Stdout, rotator))
+	AuditLogger.SetLevel(log.InfoLevel)
+
+	log.Infof("Audit logger configured, writing to %s", filePath)
 }

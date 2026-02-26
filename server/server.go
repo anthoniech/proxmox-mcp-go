@@ -31,6 +31,7 @@ func New(conf *Config) *Server {
 	s := Server{conf: conf}
 
 	e := echo.New()
+	e.Use(requestLogger())
 
 	e.File("/", "build/static/index.html")
 	registerRoutes(e)
@@ -68,6 +69,27 @@ func (s *Server) SetMCPHandler(h http.Handler, apiKey string) {
 	}
 }
 
+func requestLogger() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			start := time.Now()
+			err := next(c)
+
+			req := c.Request()
+			res := c.Response()
+			log.WithFields(log.Fields{
+				"client_ip": c.RealIP(),
+				"method":    req.Method,
+				"path":      req.URL.Path,
+				"status":    res.Status,
+				"latency":   time.Since(start).String(),
+			}).Info("request")
+
+			return err
+		}
+	}
+}
+
 func bearerAuth(apiKey string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -75,7 +97,10 @@ func bearerAuth(apiKey string) echo.MiddlewareFunc {
 			auth := c.Request().Header.Get("Authorization")
 
 			if len(auth) <= len(prefix) || auth[:len(prefix)] != prefix {
-				return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing or invalid authorization header"})
+				return c.JSON(
+					http.StatusUnauthorized,
+					map[string]string{"error": "missing or invalid authorization header"},
+				)
 			}
 
 			if auth[len(prefix):] != apiKey {

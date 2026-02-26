@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 # Create non-root user
 FROM alpine:3.20 AS security_provider
 RUN addgroup -S nonroot && adduser -S nonroot -G nonroot
-RUN mkdir /data
+RUN mkdir /data && mkdir /logs && chown nonroot:nonroot /logs
 
 # Final image
 FROM scratch
@@ -32,6 +32,7 @@ COPY --from=builder /build/config/config.yaml /app/
 
 COPY --from=security_provider /etc/passwd /etc/passwd
 COPY --from=security_provider /data /app/data
+COPY --from=security_provider /logs /app/logs
 USER nonroot
 
 WORKDIR /app

@@ -11,11 +11,12 @@ import (
 	"runtime"
 	"syscall"
 
+	log "github.com/sirupsen/logrus"
+	flag "github.com/spf13/pflag"
+
 	"github.com/anthoniech/proxmox-mcp-go/config"
 	"github.com/anthoniech/proxmox-mcp-go/mcp"
 	"github.com/anthoniech/proxmox-mcp-go/server"
-	log "github.com/sirupsen/logrus"
-	flag "github.com/spf13/pflag"
 )
 
 var versionString = "dev"
@@ -67,7 +68,7 @@ func loadOptions() options {
 		"log",
 		"l",
 		"",
-		"Path to log file. If empty: write to stdout; if 'syslog': write to system log",
+		"Path to log file. If empty: write to stdout",
 	)
 	verbose := flag.BoolP("verbose", "v", false, "verbose output")
 	help := flag.BoolP("help", "h", false, "Print this help")
@@ -98,10 +99,6 @@ func run(args options) {
 	}
 
 	initWorkingDir(args)
-	configureLogger(args)
-
-	log.Printf("proxmox-mcp-go, version %s, arch %s %s", versionString, runtime.GOOS, runtime.GOARCH)
-	log.Debugf("Current working directory is %s", appCtx.workDir)
 
 	configPath := config.ResolveConfigPath(appCtx.configFilename, appCtx.workDir)
 
@@ -116,6 +113,12 @@ func run(args options) {
 		os.Exit(1)
 	}
 
+	configureLogger(args)
+	configureAuditLogger()
+
+	log.Printf("proxmox-mcp-go, version %s, arch %s %s", versionString, runtime.GOOS, runtime.GOARCH)
+	log.Debugf("Current working directory is %s", appCtx.workDir)
+
 	webConf := server.Config{
 		BindHost: config.Cfg.BindHost,
 		BindPort: config.Cfg.BindPort,
@@ -127,7 +130,7 @@ func run(args options) {
 
 	if config.Cfg.PVEURL != "" && config.Cfg.PVETokenID != "" && config.Cfg.PVEToken != "" {
 		pveToken := config.Cfg.PVETokenID + "=" + config.Cfg.PVEToken
-		mcpSrv, err := mcp.New(config.Cfg.PVEURL, pveToken)
+		mcpSrv, err := mcp.New(config.Cfg.PVEURL, pveToken, AuditLogger)
 		if err != nil {
 			log.Warnf("Failed to initialize MCP server: %v", err)
 		} else {

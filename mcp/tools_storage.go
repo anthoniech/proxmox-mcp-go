@@ -1,3 +1,6 @@
+// Copyright (c) 2025 anthoniech
+// Licensed under the MIT License. See LICENSE file for details.
+
 package mcp
 
 import (

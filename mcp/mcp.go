@@ -14,8 +14,8 @@ type Server struct {
 	mcpServer *server.MCPServer
 }
 
-func New(pveURL, pveToken string) (*Server, error) {
-	client := NewProxmoxClient(pveURL, pveToken)
+func New(pveURL, pveToken string, auditLogger *log.Logger) (*Server, error) {
+	client := NewProxmoxClient(pveURL, pveToken, auditLogger)
 
 	s := server.NewMCPServer("proxmox", "1.0.0",
 		server.WithToolCapabilities(true),

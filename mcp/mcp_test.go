@@ -1,3 +1,6 @@
+// Copyright (c) 2025 anthoniech
+// Licensed under the MIT License. See LICENSE file for details.
+
 package mcp_test
 
 import (
@@ -6,9 +9,10 @@ import (
 	"sort"
 	"testing"
 
-	mcplib "github.com/anthoniech/proxmox-mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+
+	mcplib "github.com/anthoniech/proxmox-mcp-go/mcp"
 )
 
 const (
@@ -39,7 +43,7 @@ var expectedTools = []string{
 func newTestServer(t *testing.T) *mcplib.Server {
 	t.Helper()
 
-	s, err := mcplib.New(fakeURL, fakeToken)
+	s, err := mcplib.New(fakeURL, fakeToken, nil)
 	if err != nil {
 		t.Fatalf("New() returned error: %v", err)
 	}

@@ -19,6 +19,7 @@ verbose: true
 pve_url: "https://your-proxmox-host:8006"
 pve_token_id: "root@pam!mcp"
 pve_token: "your-api-token-secret"
+mcp_api_key: "your-secret-key-here"
 # mcp_stdio: false
 ```
 
@@ -29,6 +30,7 @@ pve_token: "your-api-token-secret"
 | `pve_url` | Proxmox VE API URL |
 | `pve_token_id` | API token ID (e.g. `root@pam!mcp`) |
 | `pve_token` | API token secret |
+| `mcp_api_key` | API key for authenticating MCP endpoint requests (Bearer token) |
 | `mcp_stdio` | Enable stdio transport (default: `false`) |
 
 ### Running
@@ -57,11 +59,16 @@ The MCP server is available at `POST /mcp` using the streamable HTTP transport.
   "mcpServers": {
     "proxmox": {
       "type": "url",
-      "url": "http://your-host:3001/mcp"
+      "url": "http://your-host:3001/mcp",
+      "headers": {
+        "Authorization": "Bearer your-secret-key-here"
+      }
     }
   }
 }
 ```
+
+When `mcp_api_key` is set, all requests to `/mcp` must include a `Authorization: Bearer <key>` header. If the key is not set, the endpoint is unauthenticated.
 
 ### Available Tools
 
