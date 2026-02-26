@@ -74,8 +74,8 @@ When `mcp_api_key` is set, all requests to `/mcp` must include a `Authorization:
 
 | Category | Tools |
 |----------|-------|
-| Cluster | `get_cluster_status`, `list_nodes`, `get_node_status` |
-| Guest | `list_vms`, `list_containers`, `list_cluster_resources`, `start_guest`, `stop_guest`, `get_next_id` |
+| Cluster | `get_version`, `get_cluster_status`, `list_nodes`, `get_node_status`, `get_node_network` |
+| Guest | `list_vms`, `list_containers`, `list_cluster_resources`, `get_guest_config`, `start_guest`, `stop_guest`, `get_next_id`, `update_guest_config`, `migrate_guest`, `resize_guest_disk` |
 | Create | `create_vm`, `create_container`, `clone_guest`, `delete_guest`, `convert_to_template` |
 | Snapshot | `list_snapshots`, `create_snapshot`, `rollback_snapshot`, `delete_snapshot` |
 | Backup | `backup_guest`, `list_backups`, `restore_backup` |

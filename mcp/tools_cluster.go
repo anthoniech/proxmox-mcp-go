@@ -71,4 +71,25 @@ func RegisterClusterTools(s *server.MCPServer, c *ProxmoxClient) {
 			return mcp.NewToolResultText(result), nil
 		},
 	)
+
+	s.AddTool(
+		mcp.NewTool("get_node_network",
+			mcp.WithDescription("List network interfaces on a Proxmox node"),
+			mcp.WithString("node",
+				mcp.Description("Node name"),
+				mcp.Required(),
+			),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			node, err := req.RequireString("node")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/network", node))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			return mcp.NewToolResultText(result), nil
+		},
+	)
 }

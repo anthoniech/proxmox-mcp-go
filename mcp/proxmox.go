@@ -140,6 +140,14 @@ func (c *ProxmoxClient) Post(ctx context.Context, path string, data url.Values) 
 	return c.do(ctx, http.MethodPost, path, body)
 }
 
+func (c *ProxmoxClient) Put(ctx context.Context, path string, data url.Values) (string, error) {
+	var body io.Reader
+	if data != nil {
+		body = strings.NewReader(data.Encode())
+	}
+	return c.do(ctx, http.MethodPut, path, body)
+}
+
 func (c *ProxmoxClient) Delete(ctx context.Context, path string, params url.Values) (string, error) {
 	p := path
 	if len(params) > 0 {
