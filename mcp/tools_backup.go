@@ -43,6 +43,14 @@ func RegisterBackupTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funle
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			data := url.Values{}
 			data.Set("vmid", vmid)
@@ -81,6 +89,14 @@ func RegisterBackupTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funle
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			storage, err = validatePathSegment("storage", storage)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content?content=backup", node, storage))
 			if err != nil {
@@ -92,7 +108,7 @@ func RegisterBackupTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funle
 
 	s.AddTool(
 		mcp.NewTool("restore_backup",
-			mcp.WithDescription("Restore a VM from a backup archive"),
+			mcp.WithDescription("Restore a VM from a backup archive. Requires confirm=true to execute."),
 			mcp.WithString("node",
 				mcp.Description("Node name"),
 				mcp.Required(),
@@ -108,8 +124,18 @@ func RegisterBackupTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funle
 			mcp.WithString("storage",
 				mcp.Description("Target storage for restored disks"),
 			),
+			mcp.WithString("confirm",
+				mcp.Description("Must be set to 'true' to confirm this destructive operation"),
+				mcp.Required(),
+			),
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			confirm := req.GetString("confirm", "")
+			if confirm != confirmValue {
+				return mcp.NewToolResultError(
+					"destructive operation: set confirm='true' to restore this backup",
+				), nil
+			}
 			node, err := req.RequireString("node")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
@@ -119,6 +145,14 @@ func RegisterBackupTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funle
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 			archive, err := req.RequireString("archive")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

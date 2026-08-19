@@ -130,7 +130,7 @@ func run(args options) {
 
 	if config.Cfg.PVEURL != "" && config.Cfg.PVETokenID != "" && config.Cfg.PVEToken != "" {
 		pveToken := config.Cfg.PVETokenID + "=" + config.Cfg.PVEToken
-		mcpSrv, err := mcp.New(config.Cfg.PVEURL, pveToken, AuditLogger)
+		mcpSrv, err := mcp.New(config.Cfg.PVEURL, pveToken, config.Cfg.PVEVerifySSL, AuditLogger)
 		if err != nil {
 			log.Warnf("Failed to initialize MCP server: %v", err)
 		} else {

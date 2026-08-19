@@ -12,7 +12,11 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen,gocognit
+//nolint:funlen,gocognit,gocyclo,cyclop // MCP tool registration with input validation
+func RegisterGuestTools(
+	s *server.MCPServer,
+	c *ProxmoxClient,
+) {
 	s.AddTool(
 		mcp.NewTool("list_vms",
 			mcp.WithDescription("List all QEMU virtual machines on a node"),
@@ -23,6 +27,10 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			node, err := req.RequireString("node")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			node, err = validatePathSegment("node", node)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -44,6 +52,10 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			node, err := req.RequireString("node")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			node, err = validatePathSegment("node", node)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -69,8 +81,11 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 	)
 
 	s.AddTool(
-		mcp.NewTool("get_guest_config",
-			mcp.WithDescription("Get the configuration of a VM or container (disk layout, NIC config, boot order, etc.)"),
+		mcp.NewTool(
+			"get_guest_config",
+			mcp.WithDescription(
+				"Get the configuration of a VM or container (disk layout, NIC config, boot order, etc.)",
+			),
 			mcp.WithString("node",
 				mcp.Description("Node name"),
 				mcp.Required(),
@@ -92,7 +107,18 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/%s/%s/config", node, guestType, vmid))
 			if err != nil {
@@ -126,7 +152,18 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Post(ctx, fmt.Sprintf("/nodes/%s/%s/%s/status/start", node, guestType, vmid), nil)
 			if err != nil {
@@ -163,8 +200,22 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
-			action := req.GetString("action", "shutdown")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			action, err := validateStopAction(req.GetString("action", "shutdown"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Post(ctx, fmt.Sprintf("/nodes/%s/%s/%s/status/%s", node, guestType, vmid, action), nil)
 			if err != nil {
@@ -238,7 +289,18 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			data := url.Values{}
 			for _, key := range []string{"memory", "cores", "sockets", "cpu", "net0", "name", "description", "boot", "onboot"} {
@@ -294,7 +356,22 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			target, err = validatePathSegment("target", target)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			data := url.Values{}
 			data.Set("target", target)
@@ -350,7 +427,18 @@ func RegisterGuestTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			data := url.Values{}
 			data.Set("disk", disk)

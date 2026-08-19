@@ -12,7 +12,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func RegisterTaskTools(s *server.MCPServer, c *ProxmoxClient) {
+func RegisterTaskTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:gocognit
 	s.AddTool(
 		mcp.NewTool("list_tasks",
 			mcp.WithDescription("List recent tasks on a node"),
@@ -26,6 +26,10 @@ func RegisterTaskTools(s *server.MCPServer, c *ProxmoxClient) {
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			node, err := req.RequireString("node")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			node, err = validatePathSegment("node", node)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -60,6 +64,10 @@ func RegisterTaskTools(s *server.MCPServer, c *ProxmoxClient) {
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/tasks/%s/status", node, url.PathEscape(upid)))
 			if err != nil {
@@ -87,6 +95,10 @@ func RegisterTaskTools(s *server.MCPServer, c *ProxmoxClient) {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 			upid, err := req.RequireString("upid")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			node, err = validatePathSegment("node", node)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

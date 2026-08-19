@@ -45,7 +45,7 @@ var expectedTools = []string{
 func newTestServer(t *testing.T) *mcplib.Server {
 	t.Helper()
 
-	s, err := mcplib.New(fakeURL, fakeToken, nil)
+	s, err := mcplib.New(fakeURL, fakeToken, false, nil)
 	if err != nil {
 		t.Fatalf("New() returned error: %v", err)
 	}

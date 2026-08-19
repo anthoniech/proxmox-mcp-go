@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,7 +25,7 @@ type ProxmoxClient struct {
 	Logger     *log.Logger
 }
 
-func NewProxmoxClient(baseURL, token string, logger *log.Logger) *ProxmoxClient {
+func NewProxmoxClient(baseURL, token string, verifySSL bool, logger *log.Logger) *ProxmoxClient {
 	return &ProxmoxClient{
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Token:   token,
@@ -32,7 +33,7 @@ func NewProxmoxClient(baseURL, token string, logger *log.Logger) *ProxmoxClient 
 		HTTPClient: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true, //nolint:gosec // Proxmox commonly uses self-signed certificates
+					InsecureSkipVerify: !verifySSL, //nolint:gosec // Configurable; Proxmox commonly uses self-signed certs
 				},
 			},
 		},
@@ -126,6 +127,59 @@ func (c *ProxmoxClient) do(ctx context.Context, method, path string, body io.Rea
 		return string(apiResp.Data), nil
 	}
 	return string(formatted), nil
+}
+
+const confirmValue = "true"
+
+func validatePathSegment(name, value string) (string, error) {
+	cleaned := strings.TrimSpace(strings.Trim(value, "\"'"))
+	if cleaned == "" {
+		return "", fmt.Errorf("invalid %s: must not be empty", name)
+	}
+	if strings.ContainsAny(cleaned, "/\\") || strings.Contains(cleaned, "..") {
+		return "", fmt.Errorf("invalid %s %q: must not contain path separators or '..'", name, value)
+	}
+	return cleaned, nil
+}
+
+const (
+	guestTypeQemu = "qemu"
+	guestTypeLXC  = "lxc"
+)
+
+var validGuestTypes = map[string]bool{guestTypeQemu: true, guestTypeLXC: true}
+
+func validateGuestType(raw string) (string, error) {
+	cleaned := strings.TrimSpace(strings.Trim(raw, "\"'"))
+	if !validGuestTypes[cleaned] {
+		return "", fmt.Errorf("invalid guest type %q: must be 'qemu' or 'lxc'", raw)
+	}
+	return cleaned, nil
+}
+
+const (
+	actionStop     = "stop"
+	actionShutdown = "shutdown"
+	actionReboot   = "reboot"
+)
+
+var validStopActions = map[string]bool{actionStop: true, actionShutdown: true, actionReboot: true}
+
+func validateStopAction(raw string) (string, error) {
+	cleaned := strings.TrimSpace(strings.Trim(raw, "\"'"))
+	if !validStopActions[cleaned] {
+		return "", fmt.Errorf("invalid action %q: must be 'stop', 'shutdown', or 'reboot'", raw)
+	}
+	return cleaned, nil
+}
+
+func parseVMID(raw string) (string, error) {
+	cleaned := strings.TrimSpace(strings.Trim(raw, "\"'"))
+	n, err := strconv.Atoi(cleaned)
+	if err != nil {
+		return "", fmt.Errorf("invalid vmid %q: must be an integer", raw)
+	}
+	return strconv.Itoa(n), nil
 }
 
 func (c *ProxmoxClient) Get(ctx context.Context, path string) (string, error) {

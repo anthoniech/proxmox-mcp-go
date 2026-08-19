@@ -19,6 +19,7 @@ verbose: true
 pve_url: "https://your-proxmox-host:8006"
 pve_token_id: "root@pam!mcp"
 pve_token: "your-api-token-secret"
+# pve_verify_ssl: false
 mcp_api_key: "your-secret-key-here"
 # mcp_stdio: false
 ```
@@ -30,6 +31,7 @@ mcp_api_key: "your-secret-key-here"
 | `pve_url` | Proxmox VE API URL |
 | `pve_token_id` | API token ID (e.g. `root@pam!mcp`) |
 | `pve_token` | API token secret |
+| `pve_verify_ssl` | Verify the Proxmox TLS certificate (default: `false`, as Proxmox commonly uses self-signed certs) |
 | `mcp_api_key` | API key for authenticating MCP endpoint requests (Bearer token) |
 | `mcp_stdio` | Enable stdio transport (default: `false`) |
 
@@ -81,6 +83,8 @@ When `mcp_api_key` is set, all requests to `/mcp` must include a `Authorization:
 | Backup | `backup_guest`, `list_backups`, `restore_backup` |
 | Storage | `list_storage`, `list_templates`, `list_isos`, `download_template` |
 | Task | `list_tasks`, `get_task_status`, `get_task_log` |
+
+Destructive tools (`delete_guest`, `rollback_snapshot`, `restore_backup`) require an explicit `confirm: "true"` argument; without it they return an error and make no API call. Tool arguments used in Proxmox API paths (`node`, `vmid`, `type`, `snapname`, `storage`, ...) are validated against path traversal, and `type`/`action` values are checked against allowlists.
 
 ## API
 

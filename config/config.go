@@ -37,6 +37,8 @@ type Configuration struct {
 	PVETokenID string `yaml:"pve_token_id"`
 	PVEToken   string `yaml:"pve_token"`
 
+	PVEVerifySSL bool `yaml:"pve_verify_ssl"`
+
 	MCPStdio  bool   `yaml:"mcp_stdio"`
 	MCPAPIKey string `yaml:"mcp_api_key"`
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func RegisterStorageTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen
+func RegisterStorageTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen,gocognit
 	s.AddTool(
 		mcp.NewTool("list_storage",
 			mcp.WithDescription("List storage pools on a node"),
@@ -23,6 +23,10 @@ func RegisterStorageTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funl
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			node, err := req.RequireString("node")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			node, err = validatePathSegment("node", node)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
@@ -50,7 +54,14 @@ func RegisterStorageTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funl
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			storage := req.GetString("storage", "local")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			storage, err := validatePathSegment("storage", req.GetString("storage", "local"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content?content=vztmpl", node, storage))
 			if err != nil {
@@ -76,7 +87,14 @@ func RegisterStorageTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funl
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			storage := req.GetString("storage", "local")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			storage, err := validatePathSegment("storage", req.GetString("storage", "local"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/storage/%s/content?content=iso", node, storage))
 			if err != nil {
@@ -112,6 +130,10 @@ func RegisterStorageTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funl
 				return mcp.NewToolResultError(err.Error()), nil
 			}
 			template, err := req.RequireString("template")
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			node, err = validatePathSegment("node", node)
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}

@@ -12,7 +12,11 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func RegisterSnapshotTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:funlen,gocognit
+//nolint:funlen,gocognit,gocyclo,cyclop // MCP tool registration with input validation
+func RegisterSnapshotTools(
+	s *server.MCPServer,
+	c *ProxmoxClient,
+) {
 	s.AddTool(
 		mcp.NewTool("list_snapshots",
 			mcp.WithDescription("List all snapshots of a VM or container"),
@@ -37,7 +41,18 @@ func RegisterSnapshotTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:fun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Get(ctx, fmt.Sprintf("/nodes/%s/%s/%s/snapshot", node, guestType, vmid))
 			if err != nil {
@@ -82,7 +97,18 @@ func RegisterSnapshotTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:fun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			data := url.Values{}
 			data.Set("snapname", snapname)
@@ -100,7 +126,7 @@ func RegisterSnapshotTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:fun
 
 	s.AddTool(
 		mcp.NewTool("rollback_snapshot",
-			mcp.WithDescription("Rollback a VM or container to a snapshot"),
+			mcp.WithDescription("Rollback a VM or container to a snapshot. Requires confirm=true to execute."),
 			mcp.WithString("node",
 				mcp.Description("Node name"),
 				mcp.Required(),
@@ -116,8 +142,18 @@ func RegisterSnapshotTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:fun
 				mcp.Description("Snapshot name to rollback to"),
 				mcp.Required(),
 			),
+			mcp.WithString("confirm",
+				mcp.Description("Must be set to 'true' to confirm this destructive operation"),
+				mcp.Required(),
+			),
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			confirm := req.GetString("confirm", "")
+			if confirm != confirmValue {
+				return mcp.NewToolResultError(
+					"destructive operation: set confirm='true' to rollback this snapshot",
+				), nil
+			}
 			node, err := req.RequireString("node")
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
@@ -130,7 +166,22 @@ func RegisterSnapshotTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:fun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			snapname, err = validatePathSegment("snapname", snapname)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Post(
 				ctx,
@@ -176,7 +227,22 @@ func RegisterSnapshotTools(s *server.MCPServer, c *ProxmoxClient) { //nolint:fun
 			if err != nil {
 				return mcp.NewToolResultError(err.Error()), nil
 			}
-			guestType := req.GetString("type", "qemu")
+			node, err = validatePathSegment("node", node)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			vmid, err = parseVMID(vmid)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			snapname, err = validatePathSegment("snapname", snapname)
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
+			guestType, err := validateGuestType(req.GetString("type", "qemu"))
+			if err != nil {
+				return mcp.NewToolResultError(err.Error()), nil
+			}
 
 			result, err := c.Delete(
 				ctx,
